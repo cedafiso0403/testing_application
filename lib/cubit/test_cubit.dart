@@ -1,15 +1,18 @@
-import 'package:bloc/bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:hydrated_bloc/hydrated_bloc.dart';
 
-part 'test_state.dart';
 part 'test_cubit.freezed.dart';
+part 'test_cubit.g.dart';
+part 'test_state.dart';
 
-class TestCubit extends Cubit<TestState> {
+class TestCubit extends HydratedCubit<TestState> {
   TestCubit()
       : super(
           const TestState.initial(
             running: false,
             count: 0,
+            startTime: null,
+            currentTime: null,
           ),
         );
 
@@ -29,6 +32,22 @@ class TestCubit extends Cubit<TestState> {
     }
   }
 
+  void setStartTime(DateTime dateTime) {
+    emit(
+      state.copyWith(
+        startTime: dateTime,
+      ),
+    );
+  }
+
+  void setCurrentTime(DateTime dateTime) {
+    emit(
+      state.copyWith(
+        currentTime: dateTime,
+      ),
+    );
+  }
+
   void start() {
     emit(
       state.copyWith(
@@ -45,4 +64,10 @@ class TestCubit extends Cubit<TestState> {
       ),
     );
   }
+
+  @override
+  TestState? fromJson(Map<String, dynamic> json) => TestState.fromJson(json);
+
+  @override
+  Map<String, dynamic> toJson(TestState state) => state.toJson();
 }

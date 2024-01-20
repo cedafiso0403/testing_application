@@ -14,23 +14,35 @@ T _$identity<T>(T value) => value;
 final _privateConstructorUsedError = UnsupportedError(
     'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
 
+TestState _$TestStateFromJson(Map<String, dynamic> json) {
+  return _Initial.fromJson(json);
+}
+
 /// @nodoc
 mixin _$TestState {
   bool get running => throw _privateConstructorUsedError;
   int get count => throw _privateConstructorUsedError;
+  DateTime? get startTime => throw _privateConstructorUsedError;
+  DateTime? get currentTime => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(bool running, int count) initial,
+    required TResult Function(
+            bool running, int count, DateTime? startTime, DateTime? currentTime)
+        initial,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(bool running, int count)? initial,
+    TResult? Function(bool running, int count, DateTime? startTime,
+            DateTime? currentTime)?
+        initial,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(bool running, int count)? initial,
+    TResult Function(bool running, int count, DateTime? startTime,
+            DateTime? currentTime)?
+        initial,
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
@@ -50,7 +62,7 @@ mixin _$TestState {
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
-
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
   $TestStateCopyWith<TestState> get copyWith =>
       throw _privateConstructorUsedError;
@@ -61,7 +73,8 @@ abstract class $TestStateCopyWith<$Res> {
   factory $TestStateCopyWith(TestState value, $Res Function(TestState) then) =
       _$TestStateCopyWithImpl<$Res, TestState>;
   @useResult
-  $Res call({bool running, int count});
+  $Res call(
+      {bool running, int count, DateTime? startTime, DateTime? currentTime});
 }
 
 /// @nodoc
@@ -79,6 +92,8 @@ class _$TestStateCopyWithImpl<$Res, $Val extends TestState>
   $Res call({
     Object? running = null,
     Object? count = null,
+    Object? startTime = freezed,
+    Object? currentTime = freezed,
   }) {
     return _then(_value.copyWith(
       running: null == running
@@ -89,6 +104,14 @@ class _$TestStateCopyWithImpl<$Res, $Val extends TestState>
           ? _value.count
           : count // ignore: cast_nullable_to_non_nullable
               as int,
+      startTime: freezed == startTime
+          ? _value.startTime
+          : startTime // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      currentTime: freezed == currentTime
+          ? _value.currentTime
+          : currentTime // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
     ) as $Val);
   }
 }
@@ -101,7 +124,8 @@ abstract class _$$InitialImplCopyWith<$Res>
       __$$InitialImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({bool running, int count});
+  $Res call(
+      {bool running, int count, DateTime? startTime, DateTime? currentTime});
 }
 
 /// @nodoc
@@ -117,6 +141,8 @@ class __$$InitialImplCopyWithImpl<$Res>
   $Res call({
     Object? running = null,
     Object? count = null,
+    Object? startTime = freezed,
+    Object? currentTime = freezed,
   }) {
     return _then(_$InitialImpl(
       running: null == running
@@ -127,23 +153,42 @@ class __$$InitialImplCopyWithImpl<$Res>
           ? _value.count
           : count // ignore: cast_nullable_to_non_nullable
               as int,
+      startTime: freezed == startTime
+          ? _value.startTime
+          : startTime // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      currentTime: freezed == currentTime
+          ? _value.currentTime
+          : currentTime // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
     ));
   }
 }
 
 /// @nodoc
-
+@JsonSerializable()
 class _$InitialImpl implements _Initial {
-  const _$InitialImpl({required this.running, required this.count});
+  const _$InitialImpl(
+      {required this.running,
+      required this.count,
+      required this.startTime,
+      required this.currentTime});
+
+  factory _$InitialImpl.fromJson(Map<String, dynamic> json) =>
+      _$$InitialImplFromJson(json);
 
   @override
   final bool running;
   @override
   final int count;
+  @override
+  final DateTime? startTime;
+  @override
+  final DateTime? currentTime;
 
   @override
   String toString() {
-    return 'TestState.initial(running: $running, count: $count)';
+    return 'TestState.initial(running: $running, count: $count, startTime: $startTime, currentTime: $currentTime)';
   }
 
   @override
@@ -152,11 +197,17 @@ class _$InitialImpl implements _Initial {
         (other.runtimeType == runtimeType &&
             other is _$InitialImpl &&
             (identical(other.running, running) || other.running == running) &&
-            (identical(other.count, count) || other.count == count));
+            (identical(other.count, count) || other.count == count) &&
+            (identical(other.startTime, startTime) ||
+                other.startTime == startTime) &&
+            (identical(other.currentTime, currentTime) ||
+                other.currentTime == currentTime));
   }
 
+  @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, running, count);
+  int get hashCode =>
+      Object.hash(runtimeType, running, count, startTime, currentTime);
 
   @JsonKey(ignore: true)
   @override
@@ -167,27 +218,33 @@ class _$InitialImpl implements _Initial {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(bool running, int count) initial,
+    required TResult Function(
+            bool running, int count, DateTime? startTime, DateTime? currentTime)
+        initial,
   }) {
-    return initial(running, count);
+    return initial(running, count, startTime, currentTime);
   }
 
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(bool running, int count)? initial,
+    TResult? Function(bool running, int count, DateTime? startTime,
+            DateTime? currentTime)?
+        initial,
   }) {
-    return initial?.call(running, count);
+    return initial?.call(running, count, startTime, currentTime);
   }
 
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(bool running, int count)? initial,
+    TResult Function(bool running, int count, DateTime? startTime,
+            DateTime? currentTime)?
+        initial,
     required TResult orElse(),
   }) {
     if (initial != null) {
-      return initial(running, count);
+      return initial(running, count, startTime, currentTime);
     }
     return orElse();
   }
@@ -219,16 +276,32 @@ class _$InitialImpl implements _Initial {
     }
     return orElse();
   }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$InitialImplToJson(
+      this,
+    );
+  }
 }
 
 abstract class _Initial implements TestState {
   const factory _Initial(
-      {required final bool running, required final int count}) = _$InitialImpl;
+      {required final bool running,
+      required final int count,
+      required final DateTime? startTime,
+      required final DateTime? currentTime}) = _$InitialImpl;
+
+  factory _Initial.fromJson(Map<String, dynamic> json) = _$InitialImpl.fromJson;
 
   @override
   bool get running;
   @override
   int get count;
+  @override
+  DateTime? get startTime;
+  @override
+  DateTime? get currentTime;
   @override
   @JsonKey(ignore: true)
   _$$InitialImplCopyWith<_$InitialImpl> get copyWith =>

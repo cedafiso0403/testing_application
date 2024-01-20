@@ -1,11 +1,21 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:testing_application/cubit/headlessApp/headless_function.dart';
 import 'package:testing_application/cubit/test_cubit.dart';
 import 'package:flutter/services.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  HydratedBloc.storage = await HydratedStorage.build(
+    storageDirectory: kIsWeb
+        ? HydratedStorage.webStorageDirectory
+        : await getApplicationDocumentsDirectory(),
+  );
   runApp(
     const MyApp(),
   );
@@ -44,12 +54,14 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
-  HeadLessApp headLessApp = HeadLessApp()..startHeadlessTask();
+  late HeadLessApp headLessApp;
+
   final MethodChannel platformChannel = MethodChannel('testing_channel');
+  final EventChannel eventChannel = EventChannel('on_device_found');
 
   void startBluetoothDiscovery() async {
     try {
-      final String result =
+      final bool? result =
           await platformChannel.invokeMethod('startBluetoothDiscovery');
       print('Result from Native: $result');
     } on PlatformException catch (e) {
@@ -61,7 +73,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     try {
       final dynamic result =
           await platformChannel.invokeMethod('getScannedDevices');
-      print('Result from Native: ${result.toString()}');
+      print('Result from Native Scanned: ${result.toString()}');
     } on PlatformException catch (e) {
       print('Error: ${e.message}');
     }
@@ -77,6 +89,15 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     }
   }
 
+  Stream<String> streamTimeFromNative() {
+    return eventChannel.receiveBroadcastStream().map(
+      (event) {
+        print(event.toString());
+        return event.toString();
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -90,6 +111,14 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     startBluetoothDiscovery();
+    streamTimeFromNative().listen((event) {
+      print("Ayudame jesus${event}");
+    });
+    headLessApp = HeadLessApp()
+      ..startHeadlessTask(
+        context.read<TestCubit>().setStartTime,
+        context.read<TestCubit>().setCurrentTime,
+      );
     return Scaffold(
       appBar: AppBar(
         title: const Text('My app'),
@@ -101,6 +130,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 Text('${state.count}'),
+                Text('${state.startTime}'),
+                Text('${state.currentTime}'),
                 ElevatedButton(
                   onPressed: () {
                     statePermission();
@@ -119,6 +150,12 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                     startBluetoothDiscovery();
                   },
                   child: const Text('Start 3'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    headLessApp.sendInfoToHeadlessTask("QUE MIERDA");
+                  },
+                  child: const Text('Start Headless'),
                 ),
               ],
             );
