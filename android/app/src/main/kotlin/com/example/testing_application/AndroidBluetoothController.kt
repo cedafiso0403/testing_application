@@ -2,94 +2,87 @@ package com.example.testing_application
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothManager
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanSettings
 import android.content.Context
-import android.content.IntentFilter
 import android.content.pm.PackageManager
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import toBluetoothDeviceDomain
-import java.util.jar.Manifest
+import kotlinx.coroutines.flow.*
 
 @SuppressLint("MissingPermission")
-class AndroidBluetoothController (
-        private val context: Context
-        ): BluetoothController{
+class AndroidBluetoothController(
+    private val context: Context
+) : BluetoothController {
 
-    private val bluetoothManager by lazy{
+    private val bluetoothManager by lazy {
         context.getSystemService(BluetoothManager::class.java)
     }
 
-    private val bluetoothAdapter by lazy{
-        bluetoothManager?.adapter
+    private val bluetoothAdapter by lazy {
+        bluetoothManager?.adapter?.bluetoothLeScanner
     }
 
-    private val _scannedDevices = MutableStateFlow<List<BluetoothDeviceDomain>>(emptyList())
-    override val scannedDevices: StateFlow<List<BluetoothDeviceDomain>>
+
+    private val _scannedDevices = MutableStateFlow<List<android.bluetooth.BluetoothDevice>>(emptyList())
+    override val scannedDevices: StateFlow<List<android.bluetooth.BluetoothDevice>>
         get() = _scannedDevices.asStateFlow()
 
-    private val _pairedDevices = MutableStateFlow<List<BluetoothDeviceDomain>>(emptyList())
-    override val pairedDevices: StateFlow<List<BluetoothDeviceDomain>>
-        get() = _pairedDevices.asStateFlow()
 
-    private val foundDeviceReceiver = FoundDeviceReceiver{
-        device -> _scannedDevices.update { devices ->
-            val newDevice = device.toBluetoothDeviceDomain()
-        if(newDevice in devices) devices else devices + newDevice
-    }
-    }
+    private val _connectedDevices = MutableStateFlow<List<BleConnector>>(emptyList())
+    override val connectedDevices: StateFlow<List<BleConnector>>
+        get() = _connectedDevices.asStateFlow()
 
-    init{
-        updatePairedDevices()
+    private val scanCallback = CallBackController(_scannedDevices)
+
+    private val connectionManager = ConnectionManager(context, _scannedDevices, bluetoothAdapter!!)
+
+
+    init {
+
     }
 
     override fun startDiscovery() {
-        if(!hasPermission(android.Manifest.permission.BLUETOOTH_SCAN)){
-            println('S');
+        if (!hasPermission(android.Manifest.permission.BLUETOOTH_SCAN)) {
             return
         }
-        println('F');
+        val filters = mutableListOf<ScanFilter>()
 
-        context.registerReceiver(
-            foundDeviceReceiver,
-            IntentFilter(android.bluetooth.BluetoothDevice.ACTION_FOUND)
+        val deviceName = "FSRB6A"
+        val scanFilterByName = ScanFilter.Builder()
+            .setDeviceName(deviceName)
+            .build()
+        filters.add(scanFilterByName)
+
+        val scanSettings =
+            ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
+
+
+        bluetoothAdapter?.flushPendingScanResults((scanCallback))
+
+
+
+
+        bluetoothAdapter?.startScan(
+            filters, scanSettings, scanCallback
         )
 
-        updatePairedDevices()
-        bluetoothAdapter?.startDiscovery()
     }
 
     override fun stopDiscovery() {
-        if(!hasPermission(android.Manifest.permission.BLUETOOTH_CONNECT)){
+        if (!hasPermission(android.Manifest.permission.BLUETOOTH_CONNECT)) {
             return
         }
+        bluetoothAdapter?.stopScan(scanCallback)
 
-        bluetoothAdapter?.cancelDiscovery()
-    }
-
-    override fun release() {
-        context.unregisterReceiver(
-            foundDeviceReceiver
-        )
-    }
-
-    fun getScannedDevices(): List<BluetoothDevice> {
-        return _scannedDevices.value
     }
 
 
-    private fun updatePairedDevices(){
-        if(!hasPermission(android.Manifest.permission.BLUETOOTH_CONNECT)){
-            return
-        }
-        bluetoothAdapter?.bondedDevices?.map{
-            it.toBluetoothDeviceDomain() }
-            ?.also { devices ->
-            _pairedDevices.update { devices } }
+    fun disconnectAll() {
+        connectionManager.disconnectAll()
     }
 
-    fun hasPermission(permission: String): Boolean{
+
+    fun hasPermission(permission: String): Boolean {
         return context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
     }
+
 }

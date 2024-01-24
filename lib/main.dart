@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -58,6 +60,10 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
   final MethodChannel platformChannel = MethodChannel('testing_channel');
   final EventChannel eventChannel = EventChannel('on_device_found');
+  final EventChannel eventChannelConnected =
+      EventChannel('on_device_connected');
+  List<Map<String?, String>> devicesScanned = [];
+  List<Map<String?, String>> devicesConnected = [];
 
   void startBluetoothDiscovery() async {
     try {
@@ -69,27 +75,46 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     }
   }
 
-  void getScannedDevices() async {
+  void stopBluetoothDiscovery() async {
     try {
-      final dynamic result =
-          await platformChannel.invokeMethod('getScannedDevices');
+      final bool? result =
+          await platformChannel.invokeMethod('stopBluetoothDiscovery');
+      print('Result from Native: $result');
+    } on PlatformException catch (e) {
+      print('Error: ${e.message}');
+    }
+  }
+
+  void disconnectAllDevices() async {
+    try {
+      final bool? result =
+          await platformChannel.invokeMethod('disconnectAllDevices');
+      print('Result from Native: $result');
+    } on PlatformException catch (e) {
+      print('Error: ${e.message}');
+    }
+  }
+
+  void startOneTimeJob() async {
+    try {
+      final dynamic result = await platformChannel.invokeMethod('startJob');
       print('Result from Native Scanned: ${result.toString()}');
     } on PlatformException catch (e) {
       print('Error: ${e.message}');
     }
   }
 
-  void statePermission() async {
+  void startPeriodicJob() async {
     try {
       final dynamic result =
-          await platformChannel.invokeMethod('statePermission');
-      print('Result from Native: ${result.toString()}');
+          await platformChannel.invokeMethod('startPeriodicTimeJob');
+      print('Result from Native Scanned: ${result.toString()}');
     } on PlatformException catch (e) {
       print('Error: ${e.message}');
     }
   }
 
-  Stream<String> streamTimeFromNative() {
+  Stream<String> streamConnectedDevices() {
     return eventChannel.receiveBroadcastStream().map(
       (event) {
         print(event.toString());
@@ -101,6 +126,24 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    final streamScannedDevices = eventChannel.receiveBroadcastStream().map(
+      (event) {
+        return event;
+      },
+    ).listen((event) {
+      final element = devicesScanned.indexWhere((element) {
+        if (element['name'] == event.toString()) {
+          return true;
+        }
+        return false;
+      });
+      if (element != -1) {
+        return;
+      }
+      setState(() {
+        devicesScanned.add({'name': event.toString(), 'address': ''});
+      });
+    });
   }
 
   @override
@@ -110,57 +153,66 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    startBluetoothDiscovery();
-    streamTimeFromNative().listen((event) {
-      print("Ayudame jesus${event}");
-    });
-    headLessApp = HeadLessApp()
-      ..startHeadlessTask(
-        context.read<TestCubit>().setStartTime,
-        context.read<TestCubit>().setCurrentTime,
-      );
     return Scaffold(
       appBar: AppBar(
         title: const Text('My app'),
       ),
-      body: Center(
-        child: BlocBuilder<TestCubit, TestState>(
-          builder: (context, state) {
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Text('${state.count}'),
-                Text('${state.startTime}'),
-                Text('${state.currentTime}'),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Row(
+            children: <Widget>[
+              ElevatedButton(
+                onPressed: () {
+                  startBluetoothDiscovery();
+                },
+                child: const Text('Start Discovery'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  stopBluetoothDiscovery();
+                },
+                child: const Text('Stop Discovery'),
+              ),
+            ],
+          ),
+          FittedBox(
+            fit: BoxFit.contain,
+            child: Row(
+              children: [
                 ElevatedButton(
                   onPressed: () {
-                    statePermission();
-                    getScannedDevices();
+                    disconnectAllDevices();
                   },
-                  child: const Text('Start'),
+                  child: const Text('Disconnect All Devices'),
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    requestBluetoothPermission();
+                    startOneTimeJob();
                   },
-                  child: const Text('Start'),
+                  child: const Text('Start One Time Job'),
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    startBluetoothDiscovery();
+                    startPeriodicJob();
                   },
-                  child: const Text('Start 3'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    headLessApp.sendInfoToHeadlessTask("QUE MIERDA");
-                  },
-                  child: const Text('Start Headless'),
+                  child: const Text('Start Periodic Job'),
                 ),
               ],
-            );
-          },
-        ),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: devicesScanned.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text(devicesScanned[index]['name']!),
+                  subtitle: Text(devicesScanned[index]['address']!),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
